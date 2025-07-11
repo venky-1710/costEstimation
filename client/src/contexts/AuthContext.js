@@ -64,6 +64,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post('/api/auth/register', userData);
+      
+      // Check if user requires approval
+      if (response.data.requiresApproval) {
+        toast.success(response.data.message);
+        return { success: true, requiresApproval: true };
+      }
+      
+      // For users that don't require approval (customers)
       const { token, user } = response.data;
       
       localStorage.setItem('token', token);
@@ -96,7 +104,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateUser
+    updateUser,
+    token: localStorage.getItem('token')
   };
 
   return (

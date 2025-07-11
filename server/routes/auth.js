@@ -44,6 +44,22 @@ router.post('/register', [
 
     await user.save();
 
+    // Check if user needs approval
+    if (role === 'trader' || role === 'admin') {
+      return res.status(201).json({
+        message: 'Registration successful! Your account is pending approval. You will be notified once approved.',
+        requiresApproval: true,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          approvalStatus: user.approvalStatus
+        }
+      });
+    }
+
+    // For customers (though this route shouldn't be used for customers anymore)
     // Generate JWT token
     const payload = {
       userId: user._id,
@@ -96,6 +112,18 @@ router.post('/login', [
     // Check if user is active
     if (!user.isActive) {
       return res.status(400).json({ message: 'Account is deactivated' });
+    }
+
+    // Check approval status for traders and admins
+    if ((user.role === 'trader' || user.role === 'admin') && user.approvalStatus !== 'approved') {
+      if (user.approvalStatus === 'pending') {
+        return res.status(403).json({ message: 'Your account is pending approval. Please wait for admin approval.' });
+      } else if (user.approvalStatus === 'rejected') {
+        return res.status(403).json({ 
+          message: 'Your account has been rejected.', 
+          rejectionReason: user.rejectionReason 
+        });
+      }
     }
 
     // Validate password
@@ -354,6 +382,92 @@ router.post('/register-customer', [
     });
   } catch (error) {
     console.error('Customer registration error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/auth/pending-approvals
+// @desc    Get all pending approval requests (admin only)
+// @access  Private (Admin only)
+router.get('/pending-approvals', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    const pendingUsers = await User.find({ 
+      approvalStatus: 'pending',
+      role: { $in: ['trader', 'admin'] }
+    }).select('-password').sort({ createdAt: -1 });
+
+    res.json(pendingUsers);
+  } catch (error) {
+    console.error('Error fetching pending approvals:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/approve-user/:id
+// @desc    Approve user registration (admin only)
+// @access  Private (Admin only)
+router.put('/approve-user/:id', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.approvalStatus !== 'pending') {
+      return res.status(400).json({ message: 'User is not pending approval' });
+    }
+
+    user.approvalStatus = 'approved';
+    user.approvedBy = req.user._id;
+    user.approvedAt = new Date();
+    await user.save();
+
+    res.json({ message: 'User approved successfully', user: user.name });
+  } catch (error) {
+    console.error('Error approving user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/reject-user/:id
+// @desc    Reject user registration (admin only)
+// @access  Private (Admin only)
+router.put('/reject-user/:id', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    const { rejectionReason } = req.body;
+    
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.approvalStatus !== 'pending') {
+      return res.status(400).json({ message: 'User is not pending approval' });
+    }
+
+    user.approvalStatus = 'rejected';
+    user.rejectedAt = new Date();
+    user.rejectionReason = rejectionReason || 'No reason provided';
+    await user.save();
+
+    res.json({ message: 'User rejected successfully', user: user.name });
+  } catch (error) {
+    console.error('Error rejecting user:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

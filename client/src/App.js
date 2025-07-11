@@ -17,6 +17,7 @@ import EstimateView from './pages/EstimateView';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import Users from './pages/Users';
+import UserApprovals from './pages/UserApprovals';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -127,6 +128,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/user-approvals" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <UserApprovals />
                   </ProtectedRoute>
                 } 
               />

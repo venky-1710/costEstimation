@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import './CustomerRegister.css';
 
 const CustomerRegister = () => {
   const navigate = useNavigate();
@@ -83,20 +84,26 @@ const CustomerRegister = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h2>Customer Registration</h2>
-          <p>Create your account to view estimates and invoices</p>
+    <div className="customer-register-container" style={{margin: 0, padding: 0}}>
+      <div className="customer-register-card">
+        <div className="customer-register-header">
+          <h2>Create Your Account</h2>
+          <p>Join us today and start managing your estimates effortlessly</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="customer-register-form">
+          <div className="progress-indicator">
+            <div className="progress-step active"></div>
+            <div className="progress-step active"></div>
+            <div className="progress-step active"></div>
+          </div>
+
           {/* Basic Information */}
           <div className="form-section">
-            <h3>Basic Information</h3>
+            <h3>Personal Details</h3>
             
             <div className="form-group">
-              <label>Full Name *</label>
+              <label>Full Name <span className="required-field">*</span></label>
               <input
                 type="text"
                 name="name"
@@ -109,7 +116,7 @@ const CustomerRegister = () => {
 
             <div className="form-grid">
               <div className="form-group">
-                <label>Email *</label>
+                <label>Email Address <span className="required-field">*</span></label>
                 <input
                   type="email"
                   name="email"
@@ -121,21 +128,21 @@ const CustomerRegister = () => {
               </div>
 
               <div className="form-group">
-                <label>Phone *</label>
+                <label>Phone Number <span className="required-field">*</span></label>
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  placeholder="Your phone number"
+                  placeholder="+91 98765 43210"
                 />
               </div>
             </div>
 
             <div className="form-grid">
               <div className="form-group">
-                <label>Password *</label>
+                <label>Create Password <span className="required-field">*</span></label>
                 <input
                   type="password"
                   name="password"
@@ -145,10 +152,11 @@ const CustomerRegister = () => {
                   minLength="6"
                   placeholder="Minimum 6 characters"
                 />
+                <div className="field-hint">Choose a strong password with at least 6 characters</div>
               </div>
 
               <div className="form-group">
-                <label>Confirm Password *</label>
+                <label>Confirm Password <span className="required-field">*</span></label>
                 <input
                   type="password"
                   name="confirmPassword"
@@ -156,7 +164,7 @@ const CustomerRegister = () => {
                   onChange={handleChange}
                   required
                   minLength="6"
-                  placeholder="Confirm your password"
+                  placeholder="Re-enter your password"
                 />
               </div>
             </div>
@@ -164,22 +172,30 @@ const CustomerRegister = () => {
 
           {/* Customer Type */}
           <div className="form-section">
-            <h3>Customer Type</h3>
+            <h3>Account Type</h3>
             
-            <div className="form-group">
-              <label>Account Type</label>
-              <select
-                name="customerType"
-                value={formData.customerType}
-                onChange={handleChange}
+            <div className="customer-type-selector">
+              <div 
+                className={`type-option ${formData.customerType === 'individual' ? 'active' : ''}`}
+                onClick={() => setFormData(prev => ({...prev, customerType: 'individual'}))}
               >
-                <option value="individual">Individual</option>
-                <option value="business">Business</option>
-              </select>
+                <div style={{fontSize: '24px', marginBottom: '8px'}}>👤</div>
+                <div style={{fontWeight: '600'}}>Individual</div>
+                <div style={{fontSize: '13px', color: '#666', marginTop: '5px'}}>Personal account</div>
+              </div>
+              
+              <div 
+                className={`type-option ${formData.customerType === 'business' ? 'active' : ''}`}
+                onClick={() => setFormData(prev => ({...prev, customerType: 'business'}))}
+              >
+                <div style={{fontSize: '24px', marginBottom: '8px'}}>🏢</div>
+                <div style={{fontWeight: '600'}}>Business</div>
+                <div style={{fontSize: '13px', color: '#666', marginTop: '5px'}}>Company account</div>
+              </div>
             </div>
 
             {formData.customerType === 'business' && (
-              <div className="form-group">
+              <div className="form-group" style={{marginTop: '20px'}}>
                 <label>Company Name</label>
                 <input
                   type="text"
@@ -198,14 +214,15 @@ const CustomerRegister = () => {
                 name="gstNumber"
                 value={formData.gstNumber}
                 onChange={handleChange}
-                placeholder="GST number if applicable"
+                placeholder="Enter GST number if applicable"
               />
+              <div className="field-hint">Required for generating GST invoices</div>
             </div>
           </div>
 
           {/* Address Information */}
           <div className="form-section">
-            <h3>Address Information</h3>
+            <h3>Address Details</h3>
             
             <div className="form-group">
               <label>Street Address</label>
@@ -214,11 +231,11 @@ const CustomerRegister = () => {
                 name="address.street"
                 value={formData.address.street}
                 onChange={handleChange}
-                placeholder="Street address"
+                placeholder="House/Flat number, Street name"
               />
             </div>
 
-            <div className="form-grid">
+            <div className="form-grid-three">
               <div className="form-group">
                 <label>City</label>
                 <input
@@ -248,7 +265,7 @@ const CustomerRegister = () => {
                   name="address.pincode"
                   value={formData.address.pincode}
                   onChange={handleChange}
-                  placeholder="Pincode"
+                  placeholder="123456"
                 />
               </div>
             </div>
@@ -256,17 +273,18 @@ const CustomerRegister = () => {
 
           <button 
             type="submit" 
-            className="btn btn-primary btn-block"
+            className="submit-btn"
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading && <span className="loading-spinner"></span>}
+            {loading ? 'Creating Your Account...' : 'Create Account'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className="customer-register-footer">
           <p>
             Already have an account? 
-            <Link to="/login" className="auth-link"> Sign in here</Link>
+            <Link to="/login" className="auth-link">Sign in here</Link>
           </p>
         </div>
       </div>
